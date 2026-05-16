@@ -9,8 +9,9 @@ class AccountController extends Controller
 {
     public function index()
     {
-        // Mengambil data account beserta relasi customer dan tipe depositonya
-        return response()->json(Account::with(['customer', 'depositoType'])->get());
+        $accounts = Account::with('depositoType')->get();
+
+        return response()->json($accounts);
     }
 
     public function store(Request $request)
