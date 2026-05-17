@@ -1,6 +1,6 @@
 FROM php:8.2-fpm-alpine
 
-# Jalankan instalasi tools dasar dan extension PostgreSQL yang stabil
+# Install tools dasar dan extension PostgreSQL
 RUN apk add --no-cache nginx supervisor curl libpq-dev \
     && docker-php-ext-install pdo pdo_pgsql
 
@@ -8,17 +8,17 @@ RUN apk add --no-cache nginx supervisor curl libpq-dev \
 WORKDIR /var/www/html
 COPY . .
 
-# Ambil composer terbaru
+# Ambil composer terbaru dan install dependencies
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-# Jalankan install tanpa scripts dulu biar gak crash karena cache env
 RUN composer install --no-dev --optimize-autoloader --no-scripts
 
-# Atur permission folder storage wajib Laravel
-RUN chmod -R 777 /var/www/html/storage /var/www/html/bootstrap/cache
+# PENTING: Paksa buka izin folder storage & bootstrap agar tidak Error 500 karena permission
+RUN mkdir -p /var/www/html/storage/framework/cache/data \
+    && mkdir -p /var/www/html/storage/framework/sessions \
+    && mkdir -p /var/www/html/storage/framework/views \
+    && chmod -R 777 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Buka port untuk Railway
 EXPOSE 8080
 
-# Jalankan server lewat baris perintah php artisan biasa
-CMD php artisan config:clear && php artisan serve --host=0.0.0.0 --port=${PORT:-8080}
+# PAKSA BYPASS: Hapus file cache sebelum server dinyalakan
+CMD php artisan config:clear && php artisan cache:clear && php artisan view:clear && php artisan serve --host=0.0.0.0 --port=${PORT:-8080}
