@@ -1,116 +1,173 @@
 <script setup>
-    import { ref, onMounted, computed, watch } from "vue";
-    import { useAccountStore } from "../stores/accountStore";
-    import { useTransactionStore } from "../stores/transactionStore";
+import { ref, onMounted, computed, watch } from "vue";
+import { useAccountStore } from "../stores/accountStore";
+import { useTransactionStore } from "../stores/transactionStore";
+import { useDepositoTypeStore } from "../stores/depositoTypeStore";
 
-    const accountStore = useAccountStore();
-    const transactionStore = useTransactionStore();
+const depositoTypeStore = useDepositoTypeStore();
+const accountStore = useAccountStore();
+const transactionStore = useTransactionStore();
+const isNewAccountModalOpen = ref(false);
 
-    // 🔑 BYPASS AUTH: Anggap saja saat ini Nasabah ID #1 yang sedang login
-    const loggedInCustomerId = ref(1);
+//  BYPASS AUTH: Anggap saja saat ini Nasabah ID #1 yang sedang login
+const loggedInCustomerId = ref(1);
 
-    // UI State
-    const selectedAccountId = ref("");
-    const transactionType = ref("DEPOSIT"); // Default tab
-    const amountInput = ref("");
-    const dateInput = ref(new Date().toISOString().split("T")[0]); // Default hari ini
+const newAccountForm = ref({
+    packet: "",
+    deposito_type_id: "",
+    balance: 0, // Saldo awal saat buka rekening
+});
 
-    const notification = ref({ show: false, message: "", type: "success" });
+// UI State
+const selectedAccountId = ref("");
+const transactionType = ref("DEPOSIT"); // Default tab
+const amountInput = ref("");
+const dateInput = ref(new Date().toISOString().split("T")[0]); // Default hari ini
 
-    onMounted(async () => {
-        // Load semua data master akun & nasabah
+const notification = ref({ show: false, message: "", type: "success" });
+
+onMounted(async () => {
+    // Load semua data master akun & nasabah
+    await accountStore.fetchAccountsFromAPI();
+
+    // Cari rekening pertama milik nasabah ini untuk dijadikan default selector
+    if (myAccounts.value.length > 0) {
+        selectedAccountId.value = myAccounts.value[0].id;
+    }
+});
+
+onMounted(async () => {
+    await accountStore.fetchAccountsFromAPI();
+    // ➕ Ambil data tipe deposito dari API agar pilihan di modal dinamis
+    await depositoTypeStore.fetchTypesFromAPI();
+
+    if (myAccounts.value.length > 0 && !selectedAccountId.value) {
+        selectedAccountId.value = myAccounts.value[0].id;
+    }
+});
+
+const triggerNotification = (message, type = "success") => {
+    notification.value = { show: true, message, type };
+    setTimeout(() => {
+        notification.value.show = false;
+    }, 5000);
+};
+
+//  Filter rekening: Hanya menampilkan rekening milik nasabah yang sedang login
+const myAccounts = computed(() => {
+    return accountStore.accounts.filter(
+        (acc) => acc.customer_id === loggedInCustomerId.value,
+    );
+});
+
+//  Ambil object detail info rekening yang sedang dipilih saat ini
+const activeAccount = computed(() => {
+    return myAccounts.value.find(
+        (acc) => acc.id === parseInt(selectedAccountId.value),
+    );
+});
+
+const handleCreateAccount = async () => {
+    if (
+        !newAccountForm.value.packet ||
+        !newAccountForm.value.deposito_type_id ||
+        newAccountForm.value.balance < 0
+    ) {
+        triggerNotification(
+            "Harap lengkapi nama paket dan tipe deposito!",
+            "danger",
+        );
+        return;
+    }
+
+    // Eksekusi create account dengan mengunci customer_id milik user yang sedang login
+    const isSuccess = await accountStore.createAccount({
+        packet: newAccountForm.value.packet,
+        customer_id: loggedInCustomerId.value, // Otomatis terkunci!
+        balance: parseFloat(newAccountForm.value.balance) || 0,
+        deposito_type_id: parseInt(newAccountForm.value.deposito_type_id),
+    });
+
+    if (isSuccess) {
+        triggerNotification(" Rekening Deposito Baru Berhasil Dibuka!");
+
+        // Reset Form
+        newAccountForm.value.packet = "";
+        newAccountForm.value.deposito_type_id = "";
+        newAccountForm.value.balance = 0;
+        isNewAccountModalOpen.value = false;
+
+        // Refresh data akun agar dropdown dan tabel langsung mendeteksi akun baru
         await accountStore.fetchAccountsFromAPI();
 
-        // Cari rekening pertama milik nasabah ini untuk dijadikan default selector
-        if (myAccounts.value.length > 0) {
-            selectedAccountId.value = myAccounts.value[0].id;
+        // Otomatis aktifkan ke rekening yang baru saja dibuat
+        const latestAccount = myAccounts.value[myAccounts.value.length - 1];
+        if (latestAccount) {
+            selectedAccountId.value = latestAccount.id;
         }
-    });
+    } else {
+        triggerNotification("Gagal membuka rekening baru.", "danger");
+    }
+};
 
-    const triggerNotification = (message, type = "success") => {
-        notification.value = { show: true, message, type };
-        setTimeout(() => {
-            notification.value.show = false;
-        }, 2000);
-    };
+//  LOGIKA REKREASI: Hitung Estimasi Bunga Bulanan (Yearly Return / 12)
+const estimatedMonthlyReturn = computed(() => {
+    if (!activeAccount.value || !activeAccount.value.deposito_type) return 0;
+    const yearlyReturnPercent =
+        activeAccount.value.deposito_type.yearly_return || 0;
+    const currentBalance = activeAccount.value.balance || 0;
 
-    // 🎯 Filter rekening: Hanya menampilkan rekening milik nasabah yang sedang login
-    const myAccounts = computed(() => {
-        return accountStore.accounts.filter(
-            (acc) => acc.customer_id === loggedInCustomerId.value,
+    // Rumus: (Saldo Saat Ini * Suku Bunga Tahunan / 100) / 12 Bulan
+    return (currentBalance * (yearlyReturnPercent / 100)) / 12;
+});
+
+// Pantau jika nasabah mengganti pilihan nomor rekeningnya di dropdown
+watch(
+    selectedAccountId,
+    (newId) => {
+        if (newId) {
+            transactionStore.fetchAccountDetails(newId);
+        }
+    },
+    { immediate: true },
+);
+
+// HANDLER SUBMIT TRANSAKSI (DEPOSIT / WITHDRAW)
+const handleTransactionSubmit = async () => {
+    if (!selectedAccountId.value || !amountInput.value || !dateInput.value) {
+        triggerNotification(
+            "Harap lengkapi nominal dan tanggal transaksi!",
+            "danger",
         );
-    });
+        return;
+    }
 
-    // 📈 Ambil object detail info rekening yang sedang dipilih saat ini
-    const activeAccount = computed(() => {
-        return myAccounts.value.find(
-            (acc) => acc.id === parseInt(selectedAccountId.value),
+    const payload = {
+        account_id: parseInt(selectedAccountId.value),
+        type: transactionType.value,
+        amount: parseFloat(amountInput.value),
+        transaction_date: dateInput.value,
+    };
+
+    const result = await transactionStore.executeTransaction(payload);
+
+    if (result.success) {
+        triggerNotification(
+            ` Transaksi ${transactionType.value} sukses! Bunga terakumulasi: ${formatRupiah(result.data.interest_earned)}`,
         );
-    });
+        amountInput.value = ""; // Reset input nominal
+    } else {
+        triggerNotification(result.message, "danger");
+    }
+};
 
-    // 🧮 LOGIKA REKREASI: Hitung Estimasi Bunga Bulanan (Yearly Return / 12)
-    const estimatedMonthlyReturn = computed(() => {
-        if (!activeAccount.value || !activeAccount.value.deposito_type)
-            return 0;
-        const yearlyReturnPercent =
-            activeAccount.value.deposito_type.yearly_return || 0;
-        const currentBalance = activeAccount.value.balance || 0;
-
-        // Rumus: (Saldo Saat Ini * Suku Bunga Tahunan / 100) / 12 Bulan
-        return (currentBalance * (yearlyReturnPercent / 100)) / 12;
-    });
-
-    // Pantau jika nasabah mengganti pilihan nomor rekeningnya di dropdown
-    watch(
-        selectedAccountId,
-        (newId) => {
-            if (newId) {
-                transactionStore.fetchAccountDetails(newId);
-            }
-        },
-        { immediate: true },
-    );
-
-    // HANDLER SUBMIT TRANSAKSI (DEPOSIT / WITHDRAW)
-    const handleTransactionSubmit = async () => {
-        if (
-            !selectedAccountId.value ||
-            !amountInput.value ||
-            !dateInput.value
-        ) {
-            triggerNotification(
-                "Harap lengkapi nominal dan tanggal transaksi!",
-                "danger",
-            );
-            return;
-        }
-
-        const payload = {
-            account_id: parseInt(selectedAccountId.value),
-            type: transactionType.value,
-            amount: parseFloat(amountInput.value),
-            transaction_date: dateInput.value,
-        };
-
-        const result = await transactionStore.executeTransaction(payload);
-
-        if (result.success) {
-            triggerNotification(
-                `🎉 Transaksi ${transactionType.value} sukses! Bunga terakumulasi: ${formatRupiah(result.data.interest_earned)}`,
-            );
-            amountInput.value = ""; // Reset input nominal
-        } else {
-            triggerNotification(result.message, "danger");
-        }
-    };
-
-    const formatRupiah = (value) => {
-        return new Intl.NumberFormat("id-ID", {
-            style: "currency",
-            currency: "IDR",
-            minimumFractionDigits: 0,
-        }).format(value);
-    };
+const formatRupiah = (value) => {
+    return new Intl.NumberFormat("id-ID", {
+        style: "currency",
+        currency: "IDR",
+        minimumFractionDigits: 0,
+    }).format(value);
+};
 </script>
 
 <template>
@@ -118,7 +175,11 @@
         <div
             v-if="notification.show"
             class="fixed top-5 right-5 z-50 max-w-md bg-white shadow-xl rounded-xl border-l-4 p-4 flex items-center gap-3 animate-bounce"
-            :class="notification.type === 'success' ? 'border-emerald-500 text-emerald-800' : 'border-red-500 text-red-800'"
+            :class="
+                notification.type === 'success'
+                    ? 'border-emerald-500 text-emerald-800'
+                    : 'border-red-500 text-red-800'
+            "
         >
             <span>{{ notification.type === "success" ? "✅" : "⚠️" }}</span>
             <p class="text-sm font-bold">{{ notification.message }}</p>
@@ -134,7 +195,7 @@
                         >Customer Sandbox Mode</span
                     >
                     <h1 class="text-2xl font-black mt-2">
-                        Selamat Datang di Portal Nasabah 🏦
+                        Selamat Datang di Portal Nasabah
                     </h1>
                     <p class="text-sm text-slate-400 mt-1">
                         Kelola simpanan berjangka dan dapatkan profit bulanan
@@ -150,7 +211,6 @@
                     </p>
                 </div>
             </div>
-
             <div
                 class="bg-white p-4 rounded-xl border border-gray-200 shadow-xs mb-6 flex flex-col sm:flex-row items-center justify-between gap-4"
             >
@@ -163,26 +223,39 @@
                         dipilih.
                     </p>
                 </div>
-                <select
-                    v-model="selectedAccountId"
-                    class="p-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm font-bold text-gray-700 focus:outline-none focus:border-blue-500 w-full sm:w-64"
+
+                <div
+                    class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto items-center"
                 >
-                    <option
-                        v-for="acc in myAccounts"
-                        :key="acc.id"
-                        :value="acc.id"
+                    <select
+                        v-model="selectedAccountId"
+                        class="p-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm font-bold text-gray-700 focus:outline-none focus:border-blue-500 w-full sm:w-64"
                     >
-                        #{{ acc.id }} - {{ acc.packet }}
-                    </option>
-                </select>
+                        <option
+                            v-for="acc in myAccounts"
+                            :key="acc.id"
+                            :value="acc.id"
+                        >
+                            #{{ acc.id }} - {{ acc.packet }}
+                        </option>
+                    </select>
+
+                    <button
+                        @click="isNewAccountModalOpen = true"
+                        type="button"
+                        class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2.5 rounded-lg text-sm transition shrink-0 cursor-pointer w-full sm:w-auto"
+                    >
+                        Buka Rekening Baru
+                    </button>
+                </div>
             </div>
 
             <div
                 v-if="myAccounts.length === 0"
                 class="bg-amber-50 border border-amber-200 text-amber-800 p-8 rounded-xl text-center font-medium"
             >
-                ⚠️ Akun simulasi ini belum memiliki rekening deposito aktif.
-                Sila pasangkan rekening baru terlebih dahulu di Dashboard Admin!
+                Akun simulasi ini belum memiliki rekening deposito aktif. Sila
+                pasangkan rekening baru terlebih dahulu di Dashboard Admin!
             </div>
 
             <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -223,7 +296,7 @@
                             Dihitung otomatis berdasarkan suku bunga produk
                             tahunan saat ini ({{
                                 activeAccount?.deposito_type?.yearly_return ||
-                                    0
+                                0
                             }}% / tahun) dibagi 12 bulan.
                         </p>
                     </div>
@@ -235,17 +308,25 @@
                     <div class="flex border-b border-gray-100 bg-gray-50">
                         <button
                             @click="transactionType = 'DEPOSIT'"
-                            :class="transactionType === 'DEPOSIT' ? 'border-b-2 border-blue-600 text-blue-600 bg-white font-bold' : 'text-gray-500 font-medium'"
+                            :class="
+                                transactionType === 'DEPOSIT'
+                                    ? 'border-b-2 border-blue-600 text-blue-600 bg-white font-bold'
+                                    : 'text-gray-500 font-medium'
+                            "
                             class="flex-1 py-3 text-sm cursor-pointer transition"
                         >
-                            📥 Setor Tunai (Deposit)
+                            Setor Tunai (Deposit)
                         </button>
                         <button
                             @click="transactionType = 'WITHDRAW'"
-                            :class="transactionType === 'WITHDRAW' ? 'border-b-2 border-red-600 text-red-600 bg-white font-bold' : 'text-gray-500 font-medium'"
+                            :class="
+                                transactionType === 'WITHDRAW'
+                                    ? 'border-b-2 border-red-600 text-red-600 bg-white font-bold'
+                                    : 'text-gray-500 font-medium'
+                            "
                             class="flex-1 py-3 text-sm cursor-pointer transition"
                         >
-                            📤 Tarik Tunai (Withdraw)
+                            Tarik Tunai (Withdraw)
                         </button>
                     </div>
 
@@ -293,11 +374,99 @@
 
                         <button
                             type="submit"
-                            :class="transactionType === 'DEPOSIT' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-red-600 hover:bg-red-700'"
+                            :class="
+                                transactionType === 'DEPOSIT'
+                                    ? 'bg-blue-600 hover:bg-blue-700'
+                                    : 'bg-red-600 hover:bg-red-700'
+                            "
                             class="w-full text-white font-bold p-3 rounded-xl text-sm transition duration-150 shadow-md cursor-pointer mt-2"
                         >
                             Konfirmasi Eksekusi {{ transactionType }}
                         </button>
+                    </form>
+                </div>
+            </div>
+            <div
+                v-if="isNewAccountModalOpen"
+                class="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4"
+            >
+                <div
+                    class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl border border-gray-100 animate-in fade-in zoom-in-95 duration-150"
+                >
+                    <div
+                        class="flex justify-between items-center mb-4 border-b border-gray-100 pb-3"
+                    >
+                        <h3 class="text-lg font-bold text-gray-800">
+                            Pengajuan Rekening Deposito Baru
+                        </h3>
+                        <button
+                            @click="isNewAccountModalOpen = false"
+                            class="text-gray-400 hover:text-gray-600 font-bold text-lg cursor-pointer"
+                        >
+                            &times;
+                        </button>
+                    </div>
+
+                    <form
+                        @submit.prevent="handleCreateAccount"
+                        class="space-y-4"
+                    >
+                        <div>
+                            <label
+                                class="block text-xs font-bold text-gray-500 uppercase mb-1"
+                                >Nama / Label Rekening</label
+                            >
+                            <input
+                                v-model="newAccountForm.packet"
+                                type="text"
+                                placeholder="Contoh: Tabungan Nikah / Dana Darurat"
+                                class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-emerald-500"
+                                required
+                            />
+                        </div>
+
+                        <div>
+                            <label
+                                class="block text-xs font-bold text-gray-500 uppercase mb-1"
+                                >Pilih Produk Paket Deposito</label
+                            >
+                            <select
+                                v-model="newAccountForm.deposito_type_id"
+                                class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-emerald-500"
+                                required
+                            >
+                                <option value="" disabled selected>
+                                    -- Pilih Jenis Bunga --
+                                </option>
+                                <option
+                                    v-for="typeData in depositoTypeStore.types"
+                                    :key="typeData.id"
+                                    :value="typeData.id"
+                                >
+                                    {{ typeData.name }} ({{
+                                        typeData.yearly_return
+                                    }}% / tahun)
+                                </option>
+                            </select>
+                        </div>
+
+                        <div
+                            class="pt-4 flex justify-end gap-2 border-t border-gray-100 mt-4"
+                        >
+                            <button
+                                @click="isNewAccountModalOpen = false"
+                                type="button"
+                                class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm transition duration-150 cursor-pointer"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                type="submit"
+                                class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2 rounded-lg text-sm transition duration-150 cursor-pointer"
+                            >
+                                Buka Rekening Sekarang
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -306,9 +475,7 @@
                 class="mt-8 bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden"
             >
                 <div class="p-5 border-b border-gray-100 bg-gray-50">
-                    <h3 class="font-bold text-gray-700 text-sm">
-                        📑 Buku Mutasi / Riwayat Transaksi Rekening
-                    </h3>
+                    <h3 class="font-bold text-gray-700 text-sm">Buku Mutasi</h3>
                 </div>
                 <table class="w-full text-left border-collapse">
                     <thead>
@@ -334,7 +501,10 @@
                             </td>
                         </tr>
                         <tr
-                            v-else-if="!transactionStore.currentAccountDetails?.transactions?.length"
+                            v-else-if="
+                                !transactionStore.currentAccountDetails
+                                    ?.transactions?.length
+                            "
                         >
                             <td
                                 colspan="4"
@@ -346,7 +516,8 @@
                         </tr>
                         <tr
                             v-else
-                            v-for="tx in transactionStore.currentAccountDetails.transactions"
+                            v-for="tx in transactionStore.currentAccountDetails
+                                .transactions"
                             :key="tx.id"
                             class="hover:bg-gray-50/80 transition"
                         >
@@ -355,7 +526,11 @@
                             </td>
                             <td class="p-4 text-center">
                                 <span
-                                    :class="tx.type === 'DEPOSIT' ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-red-50 text-red-700 border-red-100'"
+                                    :class="
+                                        tx.type === 'DEPOSIT'
+                                            ? 'bg-blue-50 text-blue-700 border-blue-100'
+                                            : 'bg-red-50 text-red-700 border-red-100'
+                                    "
                                     class="px-2.5 py-1 text-xs font-bold rounded-md border"
                                 >
                                     {{ tx.type }}
@@ -368,7 +543,11 @@
                             </td>
                             <td
                                 class="p-4 text-right font-black"
-                                :class="tx.type === 'DEPOSIT' ? 'text-blue-600' : 'text-red-600'"
+                                :class="
+                                    tx.type === 'DEPOSIT'
+                                        ? 'text-blue-600'
+                                        : 'text-red-600'
+                                "
                             >
                                 {{ tx.type === "DEPOSIT" ? "+" : "-" }}
                                 {{ formatRupiah(tx.amount) }}
