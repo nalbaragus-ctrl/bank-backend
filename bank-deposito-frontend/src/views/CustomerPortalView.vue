@@ -3,14 +3,16 @@ import { ref, onMounted, computed, watch } from "vue";
 import { useAccountStore } from "../stores/accountStore";
 import { useTransactionStore } from "../stores/transactionStore";
 import { useDepositoTypeStore } from "../stores/depositoTypeStore";
+import { useAuthStore } from "../stores/authStore";
+import { useRouter } from "vue-router";
 
+const router = useRouter();
+const authStore = useAuthStore();
 const depositoTypeStore = useDepositoTypeStore();
 const accountStore = useAccountStore();
 const transactionStore = useTransactionStore();
 const isNewAccountModalOpen = ref(false);
-
-//  BYPASS AUTH: Anggap saja saat ini Nasabah ID #1 yang sedang login
-const loggedInCustomerId = ref(1);
+const loggedInCustomerId = computed(() => authStore.user?.id);
 
 const newAccountForm = ref({
     packet: "",
@@ -18,6 +20,10 @@ const newAccountForm = ref({
     balance: 0, // Saldo awal saat buka rekening
 });
 
+const handleLogout = () => {
+    authStore.logout()
+    router.push('/login')
+};
 // UI State
 const selectedAccountId = ref("");
 const transactionType = ref("DEPOSIT"); // Default tab
@@ -385,6 +391,19 @@ const formatRupiah = (value) => {
                         </button>
                     </form>
                 </div>
+            </div>
+            <div class="mt-4 md:mt-0 flex flex-col items-end gap-2">
+                <div class="bg-slate-800 px-4 py-1.5 rounded-xl border border-slate-700 text-xs text-right">
+                    <p class="text-slate-400">Terautentikasi Sebagai:</p>
+                    <p class="font-bold text-blue-400">{{ authStore.user?.name || 'Nasabah' }}</p>
+                </div>
+                
+                <button 
+                    @click="handleLogout" 
+                    class="text-xs bg-red-600/10 hover:bg-red-600 text-red-400 hover:text-white px-3 py-1 rounded-md font-bold transition duration-150 cursor-pointer"
+                >
+                    🛑 Keluar dari Sistem (Logout)
+                </button>
             </div>
             <div
                 v-if="isNewAccountModalOpen"

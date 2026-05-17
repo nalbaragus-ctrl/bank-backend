@@ -18,3 +18,5 @@ Route::apiResource('accounts', AccountController::class);
 
 // Route untuk Transaksi (Hanya store untuk Deposit & Withdraw)
 Route::post('transactions', [TransactionController::class, 'store']);
+
+Route::post('login', [App\Http\Controllers\AuthController::class, 'login']);

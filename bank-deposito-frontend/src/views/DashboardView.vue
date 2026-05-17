@@ -220,7 +220,7 @@ const formatRupiah = (value) => {
                 class="mt-8 bg-white p-6 rounded-xl shadow-xs border border-gray-200"
             >
                 <h3 class="font-bold text-gray-700 text-lg mb-4">
-                    ➕ Buka Rekening Deposito Baru (Simulasi)
+                     Buka Rekening Deposito Baru
                 </h3>
                 <form
                     @submit.prevent="handleSubmit"

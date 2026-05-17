@@ -29,7 +29,12 @@ class AccountController extends Controller
 
     public function show(Account $account)
     {
-        return response()->json($account->load(['customer', 'depositoType']));
+        return response()->json($account->load([
+            'depositoType',
+            'transactions' => function ($query) {
+                $query->latest('transaction_date')->latest('id');
+            }
+        ]));
     }
 
     public function update(Request $request, Account $account)

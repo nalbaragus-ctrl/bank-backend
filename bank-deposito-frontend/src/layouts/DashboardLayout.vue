@@ -1,48 +1,60 @@
 <script setup>
-import { RouterLink } from "vue-router";
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '../stores/authStore' // Sesuaikan path jika letak store kamu berbeda
+
+const authStore = useAuthStore()
+const router = useRouter()
+
+const handleAdminLogout = () => {
+    // Jalankan fungsi pembersihan state di Pinia & LocalStorage
+    authStore.logout()
+    // Tendang admin kembali ke gerbang login
+    router.push('/login')
+}
 </script>
 
 <template>
-    <div class="flex min-h-screen bg-gray-100">
-        <aside class="w-64 bg-slate-900 text-white flex flex-col">
-            <div
-                class="p-5 text-xl font-bold border-b border-slate-800 tracking-wider"
-            >
-                Bank Deposito
-            </div>
+  <div class="flex h-screen bg-gray-100">
+    <div class="w-64 bg-slate-900 text-white p-6 flex flex-col justify-between shadow-xl">
+      
+      <div class="flex flex-col gap-y-6">
+        <h2 class="text-xl font-black tracking-wide border-b border-slate-800 pb-4 text-emerald-400">
+           Bank Deposito
+        </h2>
 
-            <nav class="flex-1 p-4 space-y-2">
-                <RouterLink
-                    to="/"
-                    class="block px-4 py-2.5 rounded transition duration-200 hover:bg-slate-800 font-medium"
-                    active-class="bg-blue-600 hover:bg-blue-600 text-white"
-                >
-                    Dashboard
-                </RouterLink>
+        <nav class="flex flex-col gap-y-2">
+          <RouterLink to="/" class="flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition" active-class="bg-blue-600 text-white">
+            Rekening Nasaabah
+          </RouterLink>
 
-                <RouterLink
-                    to="/customers"
-                    class="block px-4 py-2.5 rounded transition duration-200 hover:bg-slate-800 font-medium"
-                    active-class="bg-blue-600 hover:bg-blue-600 text-white"
-                >
-                    Nasabah (Customers)
-                </RouterLink>
-                <RouterLink
-                    to="/deposito-settings"
-                    class="block px-4 py-2.5 rounded transition duration-200 hover:bg-slate-800 font-medium"
-                    active-class="bg-blue-600 hover:bg-blue-600 text-white"
-                >
-                    Deposito Settings
-                </RouterLink>
-            </nav>
+          <RouterLink to="/customers" class="flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition" active-class="bg-blue-600 text-white">
+             Nasabah
+          </RouterLink>
 
-            <div class="p-4 border-t border-slate-800 text-xs text-slate-400">
-                v1.0.0 — MVC Frontend
-            </div>
-        </aside>
+          <RouterLink to="/deposito-settings" class="flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition" active-class="bg-blue-600 text-white">
+             Jenis Deposito 
+          </RouterLink>
+        </nav>
+      </div>
 
-        <main class="flex-1 overflow-y-auto">
-            <slot />
-        </main>
+      <div class="border-t border-slate-800 pt-4 flex flex-col gap-y-3">
+        <div class="text-xs text-slate-400 px-2">
+          <p class="font-bold text-slate-300">Logged in as:</p>
+          <p class="truncate text-blue-400">{{ authStore.user?.name || 'Admin' }}</p>
+        </div>
+        
+        <button 
+          @click="handleAdminLogout" 
+          class="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-red-600 text-slate-300 hover:text-white px-4 py-2.5 rounded-xl font-bold text-xs transition duration-200 cursor-pointer shadow-xs"
+        >
+           Logout Admin
+        </button>
+      </div>
+
     </div>
+
+    <div class="flex-1 overflow-y-auto bg-slate-50">
+      <slot />
+    </div>
+  </div>
 </template>
