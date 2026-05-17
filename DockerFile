@@ -1,23 +1,24 @@
-FROM php:8.4-fpm-alpine
+FROM php:8.2-fpm-alpine
 
-# Install Nginx, Supervisor, dan driver PostgreSQL
+# Jalankan instalasi tools dasar dan extension PostgreSQL yang stabil
 RUN apk add --no-cache nginx supervisor curl libpq-dev \
     && docker-php-ext-install pdo pdo_pgsql
 
-# Setel folder kerja
+# Atur folder kerja
 WORKDIR /var/www/html
 COPY . .
 
-# Install Composer secara aman
+# Ambil composer terbaru
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Jalankan install tanpa scripts dulu biar gak crash karena cache env
 RUN composer install --no-dev --optimize-autoloader --no-scripts
 
-# Salin konfigurasi server internal bawaan Laravel untuk produksi
-RUN cp .env.example .env && php artisan package:discover
+# Atur permission folder storage wajib Laravel
+RUN chmod -R 777 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Atur izin folder agar tidak Error 500
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
-
-# Jalankan server internal PHP di port yang diminta Railway
+# Buka port untuk Railway
 EXPOSE 8080
-CMD php artisan optimize:clear && php artisan serve --host=0.0.0.0 --port=${PORT:-8080}
+
+# Jalankan server lewat baris perintah php artisan biasa
+CMD php artisan config:clear && php artisan serve --host=0.0.0.0 --port=${PORT:-8080}
