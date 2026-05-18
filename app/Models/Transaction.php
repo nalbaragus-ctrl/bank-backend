@@ -11,7 +11,7 @@ class Transaction extends Model
 
     protected $fillable = ['account_id', 'type', 'amount', 'transaction_date', 'interest_earned'];
 
-    // Relasi: Transaksi ini tercatat pada satu Akun
+
     public function account()
     {
         return $this->belongsTo(Account::class);

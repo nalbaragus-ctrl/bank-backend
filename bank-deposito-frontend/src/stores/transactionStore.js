@@ -7,7 +7,7 @@ export const useTransactionStore = defineStore('transaction', () => {
     const currentAccountDetails = ref(null)
     const isLoading = ref(false)
 
-    // Ambil detail akun & histori transaksi terbaru
+    
     async function fetchAccountDetails(accountId) {
         isLoading.value = true
         try {
@@ -25,16 +25,16 @@ export const useTransactionStore = defineStore('transaction', () => {
         try {
             const response = await transactionService.createTransaction(payload)
             
-            // 🔄 PERBAIKAN: Langsung perbarui data transaksi di state lokal Pinia menggunakan data kembalian API
+            
             if (currentAccountDetails.value && response.data.transactions) {
                 currentAccountDetails.value.balance = response.data.current_balance
                 currentAccountDetails.value.transactions = response.data.transactions
             } else {
-                // Fallback: Ambil data ulang dari API jika state kosong
+                
                 await fetchAccountDetails(payload.account_id)
             }
             
-            // Refresh data akun global agar sync dengan admin dashboard
+            
             const accountStore = useAccountStore()
             if (accountStore.fetchAccountsFromAPI) {
                 accountStore.fetchAccountsFromAPI()

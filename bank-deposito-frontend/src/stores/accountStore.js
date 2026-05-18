@@ -7,12 +7,12 @@ export const useAccountStore = defineStore('account', () => {
     const isLoading = ref(false)
     const error = ref(null)
 
-    // Getter untuk total likuiditas (global backup)
+    
     const totalBankLiquidity = computed(() => {
         return accounts.value.reduce((total, account) => total + (parseFloat(account.balance) || 0), 0)
     })
 
-    // Action: Fetch data
+    
     async function fetchAccountsFromAPI() {
         isLoading.value = true
         error.value = null
@@ -27,7 +27,7 @@ export const useAccountStore = defineStore('account', () => {
         }
     }
 
-    // Action: Create
+   
     async function createAccount(newAccountData) {
         isLoading.value = true
         try {
@@ -42,12 +42,12 @@ export const useAccountStore = defineStore('account', () => {
         }
     }
 
-    // ➕ ACTION BARU: UPDATE AKUN
+    
     async function updateAccount(id, updatedData) {
         try {
             const response = await accountService.updateAccount(id, updatedData)
             
-            // Cari data lama di dalam array Vue state, lalu timpa dengan data baru hasil response Laravel
+            
             const index = accounts.value.findIndex(acc => acc.id === id)
             if (index !== -1) {
                 accounts.value[index] = response.data
@@ -60,12 +60,11 @@ export const useAccountStore = defineStore('account', () => {
         }
     }
 
-    // ➕ ACTION BARU: HAPUS AKUN
     async function deleteAccount(id) {
         try {
             await accountService.deleteAccount(id)
             
-            // Hapus data dari array Vue state agar baris di tabel langsung hilang secara instan
+            
             accounts.value = accounts.value.filter(acc => acc.id !== id)
             return true
         } catch (err) {
@@ -82,7 +81,7 @@ export const useAccountStore = defineStore('account', () => {
         totalBankLiquidity,
         fetchAccountsFromAPI,
         createAccount,
-        updateAccount, // Pastikan di-return agar bisa dibaca oleh DashboardView.vue
-        deleteAccount  // Pastikan di-return agar bisa dibaca oleh DashboardView.vue
+        updateAccount, 
+        deleteAccount  
     }
 })

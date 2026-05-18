@@ -17,26 +17,26 @@ const loggedInCustomerId = computed(() => authStore.user?.id);
 const newAccountForm = ref({
     packet: "",
     deposito_type_id: "",
-    balance: 0, // Saldo awal saat buka rekening
+    balance: 0, 
 });
 
 const handleLogout = () => {
     authStore.logout()
     router.push('/login')
 };
-// UI State
+
 const selectedAccountId = ref("");
-const transactionType = ref("DEPOSIT"); // Default tab
+const transactionType = ref("DEPOSIT"); 
 const amountInput = ref("");
-const dateInput = ref(new Date().toISOString().split("T")[0]); // Default hari ini
+const dateInput = ref(new Date().toISOString().split("T")[0]); 
 
 const notification = ref({ show: false, message: "", type: "success" });
 
 onMounted(async () => {
-    // Load semua data master akun & nasabah
+   
     await accountStore.fetchAccountsFromAPI();
 
-    // Cari rekening pertama milik nasabah ini untuk dijadikan default selector
+    
     if (myAccounts.value.length > 0) {
         selectedAccountId.value = myAccounts.value[0].id;
     }
@@ -44,7 +44,7 @@ onMounted(async () => {
 
 onMounted(async () => {
     await accountStore.fetchAccountsFromAPI();
-    // ➕ Ambil data tipe deposito dari API agar pilihan di modal dinamis
+    
     await depositoTypeStore.fetchTypesFromAPI();
 
     if (myAccounts.value.length > 0 && !selectedAccountId.value) {
@@ -59,14 +59,14 @@ const triggerNotification = (message, type = "success") => {
     }, 5000);
 };
 
-//  Filter rekening: Hanya menampilkan rekening milik nasabah yang sedang login
+
 const myAccounts = computed(() => {
     return accountStore.accounts.filter(
         (acc) => acc.customer_id === loggedInCustomerId.value,
     );
 });
 
-//  Ambil object detail info rekening yang sedang dipilih saat ini
+
 const activeAccount = computed(() => {
     return myAccounts.value.find(
         (acc) => acc.id === parseInt(selectedAccountId.value),
@@ -86,7 +86,7 @@ const handleCreateAccount = async () => {
         return;
     }
 
-    // Eksekusi create account dengan mengunci customer_id milik user yang sedang login
+    
     const isSuccess = await accountStore.createAccount({
         packet: newAccountForm.value.packet,
         customer_id: loggedInCustomerId.value, // Otomatis terkunci!
@@ -97,16 +97,16 @@ const handleCreateAccount = async () => {
     if (isSuccess) {
         triggerNotification(" Rekening Deposito Baru Berhasil Dibuka!");
 
-        // Reset Form
+        
         newAccountForm.value.packet = "";
         newAccountForm.value.deposito_type_id = "";
         newAccountForm.value.balance = 0;
         isNewAccountModalOpen.value = false;
 
-        // Refresh data akun agar dropdown dan tabel langsung mendeteksi akun baru
+        
         await accountStore.fetchAccountsFromAPI();
 
-        // Otomatis aktifkan ke rekening yang baru saja dibuat
+        
         const latestAccount = myAccounts.value[myAccounts.value.length - 1];
         if (latestAccount) {
             selectedAccountId.value = latestAccount.id;
@@ -116,18 +116,18 @@ const handleCreateAccount = async () => {
     }
 };
 
-//  LOGIKA REKREASI: Hitung Estimasi Bunga Bulanan (Yearly Return / 12)
+
 const estimatedMonthlyReturn = computed(() => {
     if (!activeAccount.value || !activeAccount.value.deposito_type) return 0;
     const yearlyReturnPercent =
         activeAccount.value.deposito_type.yearly_return || 0;
     const currentBalance = activeAccount.value.balance || 0;
 
-    // Rumus: (Saldo Saat Ini * Suku Bunga Tahunan / 100) / 12 Bulan
+    
     return (currentBalance * (yearlyReturnPercent / 100)) / 12;
 });
 
-// Pantau jika nasabah mengganti pilihan nomor rekeningnya di dropdown
+
 watch(
     selectedAccountId,
     (newId) => {
@@ -138,7 +138,7 @@ watch(
     { immediate: true },
 );
 
-// HANDLER SUBMIT TRANSAKSI (DEPOSIT / WITHDRAW)
+
 const handleTransactionSubmit = async () => {
     if (!selectedAccountId.value || !amountInput.value || !dateInput.value) {
         triggerNotification(
@@ -161,7 +161,7 @@ const handleTransactionSubmit = async () => {
         triggerNotification(
             ` Transaksi ${transactionType.value} sukses! Bunga terakumulasi: ${formatRupiah(result.data.interest_earned)}`,
         );
-        amountInput.value = ""; // Reset input nominal
+        amountInput.value = ""; 
     } else {
         triggerNotification(result.message, "danger");
     }

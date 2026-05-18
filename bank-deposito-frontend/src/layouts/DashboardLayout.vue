@@ -19,7 +19,7 @@ const handleAdminLogout = () => {
       
       <div class="flex flex-col gap-y-6">
         <h2 class="text-xl font-black tracking-wide border-b border-slate-800 pb-4 text-emerald-400">
-           Bank Deposito
+           Belimbing Deposito
         </h2>
 
         <nav class="flex flex-col gap-y-2">

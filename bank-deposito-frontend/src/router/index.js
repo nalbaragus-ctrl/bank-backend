@@ -36,22 +36,22 @@ const router = createRouter({
   ]
 })
 
-// 🛡️ NAVIGATION GUARD: Proteksi Jalur Akses URL
+
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
 
-  // Jika halaman butuh login
+  
   if (to.meta.requiresAuth) {
     if (!authStore.isAuthenticated) {
-      return next('/login') // Tendang ke login jika belum auth
+      return next('/login') 
     }
-    // Jika user memaksa masuk ke halaman yang bukan porsinya
+    
     if (to.meta.role && authStore.role !== to.meta.role) {
       return next(authStore.role === 'ADMIN' ? '/' : '/customer-portal')
     }
   }
 
-  // Jika sudah login tapi mencoba akses halaman login lagi
+  
   if (to.path === '/login' && authStore.isAuthenticated) {
     return next(authStore.role === 'ADMIN' ? '/' : '/customer-portal')
   }

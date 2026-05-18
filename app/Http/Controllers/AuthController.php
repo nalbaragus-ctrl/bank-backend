@@ -18,7 +18,7 @@ class AuthController extends Controller
         $email = $request->email;
         $password = $request->password;
 
-        // 1. CEK AKUN ADMIN (Hardcoded demi kemudahan simulasi bursa)
+
         if ($email === 'admin@bank.com' && $password === 'admin123') {
             return response()->json([
                 'status' => 'success',
@@ -30,8 +30,7 @@ class AuthController extends Controller
             ]);
         }
 
-        // 2. CEK AKUN CUSTOMER (Mencari berdasarkan nama/email di tabel customers)
-        // Kita asumsikan nasabah login menggunakan namanya sebagai 'email/username' demi simplisitas sandbox
+
         $customer = Customer::where('name', 'LIKE', $email)->first();
 
         if ($customer && $password === 'nasabah123') {

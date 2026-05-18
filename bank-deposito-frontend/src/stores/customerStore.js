@@ -35,7 +35,7 @@ export const useCustomerStore = defineStore('customer', () => {
         }
     }
 
-    // ➕ ACTION BARU: UPDATE CUSTOMER
+    
     async function updateCustomer(id, updatedData) {
         try {
             const response = await customerService.updateCustomer(id, updatedData)
@@ -51,7 +51,7 @@ export const useCustomerStore = defineStore('customer', () => {
         }
     }
 
-    // ➕ ACTION BARU: HAPUS CUSTOMER
+    
     async function deleteCustomer(id) {
         try {
             await customerService.deleteCustomer(id)
@@ -59,7 +59,7 @@ export const useCustomerStore = defineStore('customer', () => {
             return true
         } catch (err) {
             console.error(err)
-            // Menangkap pesan error restriksi dari Laravel jika nasabah masih punya akun
+            
             alert(err.response?.data?.message || 'Gagal menghapus nasabah.')
             return false
         }

@@ -5,14 +5,14 @@ import StatsCard from "../components/StatsCard.vue";
 import { useAccountStore } from "../stores/accountStore";
 import { useCustomerStore } from "../stores/customerStore";
 
-// 1. INISIALISASI SEMUA STORE & STATE (Harus di paling atas)
+
 const accountStore = useAccountStore();
 const customerStore = useCustomerStore();
 
-// State Konfirmasi Hapus Langsung di UI
+
 const isConfirmingDelete = ref(false);
 
-// State Manajemen Modal Edit/Delete
+
 const isModalOpen = ref(false);
 const selectedAccount = ref(null);
 const editForm = ref({
@@ -21,22 +21,22 @@ const editForm = ref({
     deposito_type_id: "",
 });
 
-// Form state untuk Buka Rekening Baru
+
 const form = ref({
     packet: "",
-    customer_id: "", // Tersinkronisasi otomatis dengan filter tabel!
+    customer_id: "", 
     balance: "",
     deposito_type_id: "",
 });
 
-// State untuk Notifikasi UI Custom
+
 const notification = ref({
     show: false,
     message: "",
-    type: "success", // 'success' atau 'danger'
+    type: "success", 
 });
 
-// 2. TIMING FUNGSIONALITAS (Lifecycle & Notification)
+
 onMounted(() => {
     accountStore.fetchAccountsFromAPI();
     customerStore.fetchCustomersFromAPI();
@@ -46,10 +46,10 @@ const triggerNotification = (message, type = "success") => {
     notification.value = { show: true, message, type };
     setTimeout(() => {
         notification.value.show = false;
-    }, 1000); // Otomatis hilang dalam 1 detik
+    }, 1000); 
 };
 
-// 3. LOGIKA MODAL HANDLERS (Sudah dibersihkan dari duplikasi)
+
 const openEditModal = (account) => {
     selectedAccount.value = account;
     editForm.value = {
@@ -57,7 +57,7 @@ const openEditModal = (account) => {
         packet: account.packet,
         deposito_type_id: account.deposito_type_id || "1",
     };
-    isConfirmingDelete.value = false; // Reset state konfirmasi hapus setiap buka modal
+    isConfirmingDelete.value = false; 
     isModalOpen.value = true;
 };
 
@@ -67,7 +67,7 @@ const closeEditModal = () => {
     isConfirmingDelete.value = false;
 };
 
-// 4. COMPUTED PROPERTIES (Filter & Likuiditas Otomatis)
+
 const filteredAccounts = computed(() => {
     if (!form.value.customer_id) {
         return accountStore.accounts;
@@ -83,7 +83,7 @@ const dynamicBankLiquidity = computed(() => {
     }, 0);
 });
 
-// 5. CRUD ACTION HANDLERS (Submit, Update, Delete)
+
 const handleSubmit = async () => {
     if (
         !form.value.packet ||
@@ -111,7 +111,7 @@ const handleSubmit = async () => {
         form.value.packet = "";
         form.value.balance = "";
         form.value.deposito_type_id = "";
-        form.value.customer_id = currentCustomer; // Pertahankan filter nasabah
+        form.value.customer_id = currentCustomer; 
         triggerNotification("🎉 Success Saving.");
     }
 };

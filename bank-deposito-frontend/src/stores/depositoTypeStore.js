@@ -26,7 +26,7 @@ export const useDepositoTypeStore = defineStore('depositoType', () => {
             const response = await depositoTypeService.updateType(id, updatedData)
             const index = types.value.findIndex(t => t.id === id)
             if (index !== -1) {
-                types.value[index] = response.data // Update state Vue secara instan
+                types.value[index] = response.data 
             }
             return true
         } catch (err) {

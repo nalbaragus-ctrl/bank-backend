@@ -1,18 +1,17 @@
 import axios from 'axios'
 
-// 1. Membuat Instance Axios dengan konfigurasi dasar
+
 const apiClient = axios.create({
-    // Jika VITE_API_URL ada di .env, pakai itu. Jika tidak ada, fallback ke '/api'
+    
     baseURL: import.meta.env.VITE_API_URL || '/api', 
     headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
     },
-    timeout: 10000 // Batas waktu tunggu 10 detik
+    timeout: 10000 
 })
 
-// 2. Request Interceptor (Pencegat Sebelum Request Terkirim)
-// Ini seperti middleware pembawa token otomatis
+
 apiClient.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('auth_token')
@@ -26,16 +25,15 @@ apiClient.interceptors.request.use(
     }
 )
 
-// 3. Response Interceptor (Pencegat Setelah Respon Diterima)
-// Ini seperti middleware pengecek status login
+
 apiClient.interceptors.response.use(
-    (response) => response, // Jika sukses (200, 201), loloskan saja
+    (response) => response, 
     (error) => {
-        // Jika backend Laravel merespon dengan status 401 (Unauthorized)
+        
         if (error.response && error.response.status === 401) {
             console.warn('Token tidak valid atau kedaluwarsa. Mengarahkan ke login...')
             localStorage.removeItem('auth_token')
-            // Di sini kita bisa paksa redirect ke login jika sudah ada routernya nanti
+            
         }
         return Promise.reject(error)
     }

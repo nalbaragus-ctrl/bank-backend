@@ -12,12 +12,12 @@ export const useAuthStore = defineStore('auth', () => {
             const response = await apiClient.post('/login', { email, password })
             const data = response.data
 
-            // Simpan ke State Pinia
+            
             user.value = data.user
             role.value = data.role
             isAuthenticated.value = true
 
-            // Simpan ke LocalStorage agar awet saat refresh browser
+           
             localStorage.setItem('auth_user', JSON.stringify(data.user))
             localStorage.setItem('auth_role', data.role)
 

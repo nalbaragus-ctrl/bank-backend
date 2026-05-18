@@ -5,7 +5,7 @@ import { useDepositoTypeStore } from "../stores/depositoTypeStore";
 
 const depositoTypeStore = useDepositoTypeStore();
 
-// State untuk Manajemen Modal Edit
+
 const isModalOpen = ref(false);
 const selectedType = ref(null);
 const editForm = ref({
@@ -14,7 +14,7 @@ const editForm = ref({
     yearly_return: 0,
 });
 
-// State untuk Notifikasi UI Simpel
+
 const notification = ref({
     show: false,
     message: "",
@@ -32,7 +32,7 @@ const triggerNotification = (message, type = "success") => {
     }, 1500);
 };
 
-// HANDLERS MODAL EDIT
+
 const openEditModal = (typeData) => {
     selectedType.value = typeData;
     editForm.value = {

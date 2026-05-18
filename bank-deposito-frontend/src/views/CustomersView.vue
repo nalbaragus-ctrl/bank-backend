@@ -5,12 +5,12 @@ import { useCustomerStore } from "../stores/customerStore";
 
 const customerStore = useCustomerStore();
 
-// Form state untuk Registrasi Baru
+
 const form = ref({
     name: "",
 });
 
-// State untuk Manajemen Modal Edit/Delete Nasabah
+
 const isModalOpen = ref(false);
 const isConfirmingDelete = ref(false);
 const selectedCustomer = ref(null);
@@ -19,7 +19,7 @@ const editForm = ref({
     name: "",
 });
 
-// State untuk Notifikasi UI Simpel
+
 const notification = ref({
     show: false,
     message: "",
@@ -37,7 +37,7 @@ const triggerNotification = (message, type = "success") => {
     }, 1500);
 };
 
-// HANDLERS REGISTRASI NASABAH
+
 const handleSubmit = async () => {
     if (!form.value.name) {
         triggerNotification(
@@ -57,7 +57,7 @@ const handleSubmit = async () => {
     }
 };
 
-// HANDLERS MODAL EDIT & DELETE
+
 const openEditModal = (customer) => {
     selectedCustomer.value = customer;
     editForm.value = {

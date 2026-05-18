@@ -20,7 +20,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Daftarkan file routes/api.php secara manual dengan prefix 'api'
+
         Route::prefix('api')
             ->middleware('api')
             ->group(base_path('routes/api.php'));
