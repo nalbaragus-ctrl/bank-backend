@@ -24,7 +24,7 @@ const handleAdminLogout = () => {
 
         <nav class="flex flex-col gap-y-2">
           <RouterLink to="/" class="flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition" active-class="bg-blue-600 text-white">
-            Rekening Nasaabah
+            Rekening Nasabah
           </RouterLink>
 
           <RouterLink to="/customers" class="flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition" active-class="bg-blue-600 text-white">
