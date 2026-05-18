@@ -193,27 +193,28 @@ classDiagram
 Berikut adalah _Use Case Diagram_ yang memetakan hak akses dan fungsi yang dapat dilakukan oleh **Admin** dan **Nasabah** di dalam sistem Bank Deposito:
 
 ```mermaid
-architecture-beta
-    group system(Sistem Bank Deposito)
-    service login(Melakukan Login)
-    service kelola_nasabah(Mengelola Data Nasabah)
-    service kelola_paket(Mengelola Paket Deposito)
-    service buka_rekening(Membuka Rekening Baru)
-    service transaksi(Melakukan Setor / Tarik Saldo)
-    service lihat_riwayat(Melihat Riwayat Transaksi)
+graph LR
+    Admin(["👤 Admin"])
+    Nasabah(["👤 Nasabah"])
 
-    actor Admin
-    actor Nasabah
+    subgraph Sistem Bank Deposito
+        login(["Melakukan Login"])
+        kelola_nasabah(["Mengelola Data Nasabah"])
+        kelola_paket(["Mengelola Paket Deposito"])
+        buka_rekening(["Membuka Rekening Baru"])
+        transaksi(["Melakukan Setor / Tarik Saldo"])
+        lihat_riwayat(["Melihat Riwayat Transaksi"])
+    end
 
-    Admin:right -- left:login
-    Admin:right -- left:kelola_nasabah
-    Admin:right -- left:kelola_paket
-    Admin:right -- left:buka_rekening
+    Admin --- login
+    Admin --- kelola_nasabah
+    Admin --- kelola_paket
+    Admin --- buka_rekening
 
-    Nasabah:left -- right:login
-    Nasabah:left -- right:buka_rekening
-    Nasabah:left -- right:transaksi
-    Nasabah:left -- right:lihat_riwayat
+    Nasabah --- login
+    Nasabah --- buka_rekening
+    Nasabah --- transaksi
+    Nasabah --- lihat_riwayat
 ```
 
 ---
