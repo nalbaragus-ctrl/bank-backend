@@ -9,7 +9,7 @@ class Transaction extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['account_id', 'type', 'amount', 'transaction_date'];
+    protected $fillable = ['account_id', 'type', 'amount', 'transaction_date', 'interest_earned'];
 
     // Relasi: Transaksi ini tercatat pada satu Akun
     public function account()
