@@ -2,13 +2,13 @@ import axios from 'axios'
 
 // 1. Membuat Instance Axios dengan konfigurasi dasar
 const apiClient = axios.create({
-    // Sesuaikan dengan URL project Laravel kamu saat dijalankan (biasanya port 8000)
-    baseURL: 'http://127.000.0.1:8000/api', 
+    // Jika VITE_API_URL ada di .env, pakai itu. Jika tidak ada, fallback ke '/api'
+    baseURL: import.meta.env.VITE_API_URL || '/api', 
     headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
     },
-    timeout: 10000 // Batas waktu tunggu 10 detik, jika lebih maka dianggap timeout
+    timeout: 10000 // Batas waktu tunggu 10 detik
 })
 
 // 2. Request Interceptor (Pencegat Sebelum Request Terkirim)
