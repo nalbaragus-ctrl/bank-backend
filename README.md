@@ -1,6 +1,6 @@
 # Dokumentasi Proyek: Bank Saving System
 
-Detail pengerjaan tugas proyek backend dan dokumentasi sistem Bank Deposito.
+Detail pengerjaan proyek backend dan dokumentasi sistem Bank Deposito.
 
 ---
 
@@ -72,28 +72,27 @@ graph TD
 
 ### c. APIs Call Every Screen
 
-1. **Halaman Autentikasi (`Login.vue`)**
+1. **Halaman Autentikasi (`LoginView.vue`)**
     - `POST /api/login` ➡️ Dipicu saat pengguna memasukkan email & password lalu menekan tombol login untuk mendapatkan Bearer Token.
 
-2. **Halaman Kelola Data Nasabah (`CustomerManagement.vue`)**
+2. **Halaman Kelola Data Nasabah (`DashboardView.vue`)**
     - `GET /api/customers` ➡️ Dipanggil otomatis saat halaman dimuat (`onMounted`) untuk menampilkan seluruh daftar nasabah di dalam tabel.
     - `POST /api/customers` ➡️ Dipicu saat admin mengisi formulir dan menekan tombol "Tambah Nasabah".
     - `PUT /api/customers/{id}` ➡️ Dipicu saat admin menyimpan perubahan setelah mengedit data nasabah.
     - `DELETE /api/customers/{id}` ➡️ Dipicu ketika admin menekan tombol "Hapus Nasabah".
 
-3. **Halaman Paket Deposito (`DepositoPackages.vue`)**
+3. **Halaman Paket Deposito (`DepositoSettingsView.vue`)**
     - `GET /api/deposito-types` ➡️ Dipanggil saat halaman dibuka untuk merender daftar paket beserta persentase return tahunannya.
     - `POST /api/deposito-types` ➡️ Dipicu saat admin menambahkan skema paket bunga baru.
     - `PUT /api/deposito-types/{id}` ➡️ Dipicu saat mengubah rate bunga atau nama paket.
-    - `DELETE /api/deposito-types/{id}` ➡️ Dipicu saat admin menghapus jenis paket deposito dari sistem.
 
-4. **Halaman Dashboard & Rekening Nasabah (`CustomerAccount.vue`)**
+4. **Halaman Dashboard & Rekening Nasabah (`CustomerView.vue`)**
     - `GET /api/accounts` ➡️ Menampilkan ringkasan seluruh rekening akun milik nasabah yang sedang aktif beserta sisa saldonya.
     - `POST /api/accounts` ➡️ Dipicu ketika nasabah/admin membuka kantong investasi deposito baru.
     - `PUT /api/accounts/{id}` ➡️ Dipicu saat melakukan perubahan informasi pada akun rekening tertentu.
     - `DELETE /api/accounts/{id}` ➡️ Dipicu saat akun rekening deposito ditutup atau dihapus.
 
-5. **Halaman Transaksi Penyetoran / Penarikan (`TransactionForm.vue`)**
+5. **Halaman Transaksi Penyetoran / Penarikan (`CustomerPortalView.vue`)**
     - `POST /api/transactions` ➡️ Dipicu ketika pengguna menekan tombol submit setelah memilih jenis mutasi (`DEPOSIT` atau `WITHDRAW`) dan memasukkan nominal uang.
     - `GET /api/transactions` ➡️ Dipanggil di bagian bawah halaman untuk langsung memperbarui tabel riwayat mutasi saldo dan bunga terakumulasi berjalan (`interest_earned`) setelah transaksi sukses.
 
@@ -188,7 +187,7 @@ classDiagram
     }
 ```
 
-### h. Use Case Diagram (Interaksi Pengguna & Sistem)
+### h. Use Case Diagram
 
 Berikut adalah _Use Case Diagram_ yang memetakan hak akses dan fungsi yang dapat dilakukan oleh **Admin** dan **Nasabah** di dalam sistem Bank Deposito:
 
