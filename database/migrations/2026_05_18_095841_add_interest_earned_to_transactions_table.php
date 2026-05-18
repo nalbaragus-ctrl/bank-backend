@@ -2,7 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema; // <-- Fasad ini yang benar
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -11,10 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('transactions', function (Blueprint $table) {
-            // Membuat kolom interest_earned diletakkan setelah kolom amount
-            $table->decimal('interest_earned', 15, 2)->default(0)->after('amount');
-        });
+
+        if (!Schema::hasColumn('transactions', 'interest_earned')) {
+            Schema::table('transactions', function (Blueprint $table) {
+                // Jika belum ada, baru buat kolomnya setelah 'amount'
+                $table->decimal('interest_earned', 15, 2)->default(0)->after('amount');
+            });
+        }
     }
 
     /**
@@ -22,9 +25,12 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('transactions', function (Blueprint $table) {
-            // Menghapus kembali kolom jika migrasi di-rollback
-            $table->dropColumn('interest_earned');
-        });
+
+        if (Schema::hasColumn('transactions', 'interest_earned')) {
+            Schema::table('transactions', function (Blueprint $table) {
+                // Jika ada, baru hapus kolomnya saat php artisan migrate:rollback
+                $table->dropColumn('interest_earned');
+            });
+        }
     }
 };
