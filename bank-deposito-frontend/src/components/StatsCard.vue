@@ -1,5 +1,5 @@
 <script setup>
-// Mengonstruksikan Props untuk menerima data dari luar (Smart Component)
+
 defineProps({
     title: {
         type: String,
@@ -11,7 +11,7 @@ defineProps({
     },
     textColor: {
         type: String,
-        default: "text-blue-600", // Warna default jika tidak diisi
+        default: "text-blue-600", 
     },
 });
 </script>
